@@ -8,9 +8,26 @@
         <meta name="viewport" content="width=device-width">
     </head>
     <body>
-        <select onchange="alert('broken!');">
-            <option value="one">One</option>
-            <option value="two">Two</option>
-        </select>
+        <input type="text" id="username" placeholder="Enter your name">
+<button onclick="submitData()">Submit</button>
+
+<script>
+function submitData() {
+  const username = document.getElementById('username').value;
+
+  fetch('https://api.jsonbin.io/v3/b/67f9fa0e8960c979a58370aa', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': '$2a$10$edUV5Pk.rkRzpUENvnJoKOi3s.oxzkoIRhkI.YRZ4cOwG/WeKPPme'
+    },
+    body: JSON.stringify({ username: username })
+  })
+  .then(response => response.json())
+  .then(data => console.log('Bin updated:', data))
+  .catch(error => console.error('Error:', error));
+}
+</script>
+
     </body>
 </html>
