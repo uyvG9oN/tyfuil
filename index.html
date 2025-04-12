@@ -52,8 +52,8 @@ async function loadNames() {
         const data = await response.json();
         
         if (response.ok) {
-            // If no data exists yet, initialize with empty array
-            const names = data.record || [];
+            // Ensure we always have an array, even if empty or null/undefined
+            const names = Array.isArray(data.record) ? data.record : [];
             displayNames(names);
             showMessage("Names loaded successfully", "success");
         } else {
@@ -82,8 +82,13 @@ async function saveName(newName) {
             throw new Error(getData.message || 'Failed to fetch existing names');
         }
         
-        // 2. Prepare updated names array
-        const existingNames = getData.record || [];
+        // 2. Ensure we have an array (handle cases where record might be null, undefined, or not an array)
+        let existingNames = [];
+        if (getData.record) {
+            existingNames = Array.isArray(getData.record) ? getData.record : [getData.record];
+        }
+        
+        // 3. Prepare updated names array
         const updatedNames = [
             ...existingNames,
             {
@@ -92,7 +97,7 @@ async function saveName(newName) {
             }
         ];
         
-        // 3. Save updated names
+        // 4. Save updated names
         const putResponse = await fetch(apiUrl, {
             method: 'PUT',
             headers: {
@@ -117,6 +122,7 @@ async function saveName(newName) {
         showMessage("Error saving name: " + error.message, "error");
     }
 }
+
 
 function displayNames(names) {
     if (!names || names.length === 0) {
