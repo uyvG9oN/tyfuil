@@ -8,26 +8,52 @@
         <meta name="viewport" content="width=device-width">
     </head>
     <body>
-        <input type="text" id="username" placeholder="Enter your name">
+<input type="text" id="username" placeholder="Enter your name">
 <button onclick="submitData()">Submit</button>
 
 <script>
-function submitData() {
-  const username = document.getElementById('username').value;
+const binId = "67f9fa0e8960c979a58370aa";
+const apiKey = "$2a$10$edUV5Pk.rkRzpUENvnJoKOi3s.oxzkoIRhkI.YRZ4cOwG/WeKPPme";
+const binUrl = `https://api.jsonbin.io/v3/b/${binId}`;
 
-  fetch('https://api.jsonbin.io/v3/b/67f9fa0e8960c979a58370aa', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': '$2a$10$edUV5Pk.rkRzpUENvnJoKOi3s.oxzkoIRhkI.YRZ4cOwG/WeKPPme'
-    },
-    body: JSON.stringify({ username: username })
-  })
-  .then(response => response.json())
-  .then(data => console.log('Bin updated:', data))
-  .catch(error => console.error('Error:', error));
+async function submitData() {
+  const username = document.getElementById("username").value;
+  if (!username) return alert("Please enter a name!");
+
+  try {
+    // Step 1: Get existing data
+    const getResponse = await fetch(binUrl, {
+      method: "GET",
+      headers: {
+        "X-Master-Key": apiKey
+      }
+    });
+
+    const existingData = await getResponse.json();
+    const currentArray = existingData.record || [];
+
+    // Step 2: Append new entry
+    const updatedArray = [...currentArray, { username, timestamp: new Date().toISOString() }];
+
+    // Step 3: Save it back
+    const putResponse = await fetch(binUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": apiKey,
+        "X-Bin-Versioning": "false" // optional: prevents creating too many versions
+      },
+      body: JSON.stringify(updatedArray)
+    });
+
+    const result = await putResponse.json();
+    console.log("Updated bin:", result);
+    alert("Submission saved!");
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Something went wrong. Check the console.");
+  }
 }
 </script>
-
     </body>
 </html>
