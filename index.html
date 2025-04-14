@@ -1,158 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Name Logger</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        #nameForm { margin-bottom: 20px; }
-        #nameInput { padding: 8px; width: 200px; }
-        button { padding: 8px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background: #45a049; }
-        #responseMessage { margin: 10px 0; min-height: 20px; }
-        .success { color: green; }
-        .error { color: red; }
-        #nameList { border-top: 1px solid #ddd; padding-top: 20px; }
-        .name-entry { margin: 5px 0; padding: 5px; background: #f9f9f9; }
-    </style>
+    <title>Data Logger</title>
 </head>
 <body>
-    <h1>Name Logger</h1>
-    <form id="nameForm">
-        <input type="text" id="nameInput" placeholder="Enter your name" required>
+    <form id="dataForm">
+        <input type="text" id="userInput" placeholder="Enter data" required>
         <button type="submit">Submit</button>
     </form>
-    
-    <div id="responseMessage"></div>
-    <h2>Previous Submissions:</h2>
-    <div id="nameList"></div>
-
-    <script>// Configuration
-const apiKey = '$2a$10$edUV5Pk.rkRzpUENvnJoKOi3s.oxzkoIRhkI.YRZ4cOwG/WeKPPme'; // Replace with your actual API key
-const binId = '67f9fa0e8960c979a58370aa';   // Replace with your actual Bin ID
+    <script>const apiKey = ''; // Replace with your actual key
+const binId = 'YOUR_BIN_ID';       // Replace with your bin ID
 const apiUrl = `https://api.jsonbin.io/v3/b/${binId}`;
 
-// DOM Elements
-const nameForm = document.getElementById('nameForm');
-const nameInput = document.getElementById('nameInput');
-const responseMessage = document.getElementById('responseMessage');
-const nameList = document.getElementById('nameList');
+document.getElementById('dataForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const inputValue = document.getElementById('userInput').value.trim();
+    if (!inputValue) return;
 
-// Initialize - Load existing names when page loads
-document.addEventListener('DOMContentLoaded', loadNames);
-
-async function loadNames() {
     try {
-        showMessage("Loading names...");
-        const response = await fetch(apiUrl, {
-            headers: {
-                'X-Master-Key': apiKey
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Ensure we always have an array, even if empty or null/undefined
-            const names = Array.isArray(data.record) ? data.record : [];
-            displayNames(names);
-            showMessage("Names loaded successfully", "success");
-        } else {
-            throw new Error(data.message || 'Failed to load names');
-        }
-    } catch (error) {
-        console.error('Error loading names:', error);
-        showMessage("Error loading names: " + error.message, "error");
-    }
-}
-
-async function saveName(newName) {
-    try {
-        showMessage("Saving name...");
-        
-        // 1. Get current names
+        // 1. Get existing data
         const getResponse = await fetch(apiUrl, {
-            headers: {
-                'X-Master-Key': apiKey
-            }
+            headers: { 'X-Master-Key': apiKey }
         });
         
-        const getData = await getResponse.json();
+        // 2. Prepare updated data
+        const existingData = await getResponse.json();
+        const currentArray = Array.isArray(existingData.record) ? existingData.record : [];
         
-        if (!getResponse.ok) {
-            throw new Error(getData.message || 'Failed to fetch existing names');
-        }
-        
-        // 2. Ensure we have an array (handle cases where record might be null, undefined, or not an array)
-        let existingNames = [];
-        if (getData.record) {
-            existingNames = Array.isArray(getData.record) ? getData.record : [getData.record];
-        }
-        
-        // 3. Prepare updated names array
-        const updatedNames = [
-            ...existingNames,
+        const updatedData = [
+            ...currentArray,
             {
-                name: newName,
+                value: inputValue,
                 timestamp: new Date().toISOString()
             }
         ];
-        
-        // 4. Save updated names
-        const putResponse = await fetch(apiUrl, {
+
+        // 3. Save updated data
+        await fetch(apiUrl, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Master-Key': apiKey,
-                'X-Bin-Name': 'Name Submission History'
+                'X-Master-Key': apiKey
             },
-            body: JSON.stringify(updatedNames)
+            body: JSON.stringify(updatedData)
         });
+
+        // Clear input after submission
+        document.getElementById('userInput').value = '';
         
-        const putData = await putResponse.json();
-        
-        if (putResponse.ok) {
-            displayNames(updatedNames);
-            showMessage("Name saved successfully!", "success");
-            nameInput.value = ''; // Clear input field
-        } else {
-            throw new Error(putData.message || 'Failed to save name');
-        }
     } catch (error) {
-        console.error('Error saving name:', error);
-        showMessage("Error saving name: " + error.message, "error");
-    }
-}
-
-
-function displayNames(names) {
-    if (!names || names.length === 0) {
-        nameList.innerHTML = "<p>No names submitted yet</p>";
-        return;
-    }
-    
-    // Display in reverse chronological order (newest first)
-    const reversedNames = [...names].reverse();
-    
-    nameList.innerHTML = reversedNames.map(nameEntry => `
-        <div class="name-entry">
-            <strong>${nameEntry.name}</strong>
-            <small>${new Date(nameEntry.timestamp).toLocaleString()}</small>
-        </div>
-    `).join('');
-}
-
-function showMessage(message, type = "") {
-    responseMessage.textContent = message;
-    responseMessage.className = type;
-}
-
-// Form submission handler
-nameForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const name = nameInput.value.trim();
-    if (name) {
-        await saveName(name);
+        console.error("Submission error:", error);
     }
 });</script>
 </body>
